@@ -1,0 +1,150 @@
+import React, {useEffect, useState} from "react";
+import {Button, Container, Form, Table} from "react-bootstrap";
+import {useParams, useLocation} from "react-router-dom";
+import Config from "../../Config";
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import Stomp from 'webstomp-client';
+
+//var stompClient=null;
+
+const PointerVote = () => {
+  const [series, setSeries] = React.useState([]);
+  const [message, setMessage] = React.useState('');
+  const [users, setUsers] = React.useState([]);
+  const [stompClient, setStompClient] = useState(null);
+  //const [webSocket, setWebSocket] = React.useState(null);
+  const params = useParams();
+  const location = useLocation();
+
+  function connectWork() {
+    const stompClient = Stomp.over(SockJS(Config.WS_URL))
+    stompClient.connect({},
+      () => {
+        setStompClient(stompClient);
+        stompClient.subscribe('/topic/public/'+location.state.ssid, onMessageReceived);
+        // Tell your username to the server
+        stompClient.send("/app/addUser/"+location.state.ssid,
+          JSON.stringify({sender: location.state.name, type:"JOIN"}),
+          {sender: "Sushil", type: "JOIN"}
+        )
+      }, onError)
+  }
+
+  function onMessageReceived(payload) {
+    let message = JSON.parse(payload.body);
+    if(message.type == "DESCRIPTION"){
+      setMessage(message.content)
+    }
+  }
+
+  function onError(error) {
+    //connectingElement.textContent = 'Could not connect to WebSocket server. Please refresh this page to try again!';
+    //connectingElement.style.color = 'red';
+    console.log("error");
+    console.log(error);
+  }
+
+  useEffect(() => {
+    connectWork();
+  }, []);
+
+  useEffect(() => {
+    console.log("from description"+message);
+    if(stompClient) {
+      let chatMessage = {
+        sender: "hari",
+        content: message,
+        type: 'DESCRIPTION'
+      };
+
+      stompClient.send("/app/sendDescription", JSON.stringify(chatMessage), JSON.stringify(chatMessage));
+      //messageInput.value = '';
+    }
+  }, [message]);
+
+  useEffect(() => {
+    const fibonacciResult = number => {
+      let n1 = 0, n2 = 1, nextTerm;
+      //let seq = [n1,n2];
+      let seq = [n1];
+      nextTerm = n1 + n2;
+      while (nextTerm <= number) {
+        // print the next term
+        seq.push(nextTerm)
+        n1 = n2;
+        n2 = nextTerm;
+        nextTerm = n1 + n2;
+      }
+      return seq;
+    };
+    setSeries(fibonacciResult(100));
+  }, [])
+
+
+  return (
+    <Container>
+      <div>
+        <Form.Label htmlFor="inputPassword5">Story Description</Form.Label>
+        <Form.Control
+          type="textarea"
+          id="inputDescription"
+          aria-describedby="descriptionHelpBlock"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+        />
+        <Form.Text id="passwordHelpBlock" muted>
+          Enter Your Story
+        </Form.Text>
+      </div>
+      <div style={{display: "flex", justifyContent: "space-between"}}>
+        <Button variant="danger">Clear Vote</Button>
+        <Button variant="primary">Show Vote</Button>
+      </div>
+      {/*point part*/}
+      <div>
+        {
+          series.map((item, key) => {
+            return (
+              <Button variant="secondary" key={key}>{item}</Button>
+            )
+          })
+        }
+      </div>
+      <hr/>
+      <div>
+        <p>Score</p>
+        <div>
+          <Table striped bordered hover>
+            <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Score</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td>1</td>
+              <td>Otto</td>
+              <td>1</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Thornton</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>Larry the Bird</td>
+              <td>2</td>
+            </tr>
+            </tbody>
+          </Table>
+        </div>
+      </div>
+    </Container>
+  )
+}
+
+export default PointerVote;

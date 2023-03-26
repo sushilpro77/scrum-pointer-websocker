@@ -1,0 +1,77 @@
+import React, {useEffect} from "react";
+import {Button, Container, Form, Table} from "react-bootstrap";
+import axios from "axios";
+import Config from "../../Config";
+import {useNavigate} from "react-router-dom";
+
+
+const PointerHome = () => {
+  const [name, setName] = React.useState(null);
+  const [ssid, setSsid] = React.useState(null);
+  const navigate = useNavigate();
+
+
+  const startSessionOnClicked = async () => {
+    if (name == null || name == "" || name.trim() == "") {
+      console.log(name)
+      alert("Please gave name");
+      return;
+    } else if( ssid != null && ssid != "" && ssid.trim() != "" ){
+      if (name == null || name == "" || name.trim() == "") {
+        console.log(name)
+        alert("Please gave name");
+        return;
+      } else {
+        navigate("/session/" + ssid, {state: {name: name,ssid: ssid}});
+      }
+    }else {
+
+      await axios.post(Config.POINTER_BASE_URL + 'token', {name})
+        .then(function (response) {
+          // handle success
+          //setData(response.data);
+          navigate("/session/" + response.data.session, {state: {name: response.data.name,ssid: response.data.session}});
+          console.log(response);
+        })
+        .catch(function (error) {
+          // handle error
+          console.log(error);
+        })
+    }
+  }
+
+
+  return (
+    <Container>
+      <p>This is home</p>
+      <div>
+        <Form.Label htmlFor="name">Name</Form.Label>
+        <Form.Control
+          type="text"
+          id="name"
+          placeholder={"Enter Your Name"}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <Form.Text id="passwordHelpBlock" muted>
+          Enter Your Name
+        </Form.Text>
+      </div>
+      <div>
+        <Form.Label htmlFor="name">Session ID</Form.Label>
+        <Form.Control
+          type="text"
+          id="ssid"
+          placeholder={"Enter Session ID"}
+          onChange={(e) => setSsid(e.target.value)}
+        />
+        <Form.Text id="passwordHelpBlock" muted>
+          Enter Your Name
+        </Form.Text>
+      </div>
+      <Button variant="primary" onClick={() => startSessionOnClicked()}>Start Session</Button>
+    </Container>
+  )
+}
+
+
+export default PointerHome;

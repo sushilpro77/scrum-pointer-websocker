@@ -1,0 +1,172 @@
+import React, {useEffect, useState} from "react";
+import {Button, Container, Form, Table} from "react-bootstrap";
+import {useParams, useLocation} from "react-router-dom";
+import Config from "../../Config";
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
+import Stomp from 'webstomp-client';
+
+
+const PointerVoteCopy = () => {
+    const [series, setSeries] = React.useState([]);
+    const [message, setMessage] = React.useState('');
+    const [stompClient, setStompClient] = useState(null);
+    //const [webSocket, setWebSocket] = React.useState(null);
+    const params = useParams();
+    const location = useLocation();
+
+
+    function connectWork() {
+        const stompClient = Stomp.over(SockJS(Config.WS_URL))
+        stompClient.connect({},
+            () => {
+                //setStompClient(stompClient);
+                //onConnected();
+                stompClient.subscribe('/topic/public', onMessageReceived);
+
+                // Tell your username to the server
+                stompClient.send("/app/addUser",
+                    JSON.stringify({sender: location.state.name, type:"JOIN"}),
+                    {sender: "Sushil", type: "JOIN"}
+                )
+            }, onError)
+    }
+
+    function onMessageReceived(payload) {
+        console.log("payload")
+        console.log(payload)
+    }
+
+    function onError(error) {
+        //connectingElement.textContent = 'Could not connect to WebSocket server. Please refresh this page to try again!';
+        //connectingElement.style.color = 'red';
+        console.log("error");
+        console.log(error);
+    }
+
+    // const connect = () => {
+    //     //const webSocket = new WebSocket(config.WS_URL);
+    //     const client = new Client({
+    //         brokerURL: config.WS_URL,
+    //         onConnect: () => {
+    //             client.subscribe('/topic/public', message =>
+    //                 console.log(`Received: ${message}`)
+    //             );
+    //             client.publish({ destination: '/app/addUser', body: JSON.stringify({sender: 'username', type: 'JOIN'}) });
+    //         },
+    //     });
+    //
+    //     client.activate();
+    // };
+
+    useEffect(() => {
+        connectWork();
+    }, []);
+
+    // const handleSend = () => {
+    //     const messageObj = { sender: 'Me', content: message };
+    //     const messageString = JSON.stringify(messageObj);
+    //     webSocket.send(messageString);
+    //     setMessage('');
+    // };
+
+    // return (
+    //     <div>
+    //         {messages.map((message) => (
+    //             <div key={message.id}>
+    //                 {message.sender}: {message.content}
+    //             </div>
+    //         ))}
+    //         <input
+    //             type="text"
+    //             value={message}
+    //             onChange={(event) => setMessage(event.target.value)}
+    //         />
+    //         <button onClick={handleSend}>Send</button>
+    //     </div>
+    // );
+
+    useEffect(() => {
+        const fibonacciResult = number => {
+            let n1 = 0, n2 = 1, nextTerm;
+            //let seq = [n1,n2];
+            let seq = [n1];
+            nextTerm = n1 + n2;
+            while (nextTerm <= number) {
+                // print the next term
+                seq.push(nextTerm)
+                n1 = n2;
+                n2 = nextTerm;
+                nextTerm = n1 + n2;
+            }
+            return seq;
+        };
+        setSeries(fibonacciResult(100));
+    }, [])
+
+
+    return (
+        <Container>
+            <div>
+                <Form.Label htmlFor="inputPassword5">Story Description</Form.Label>
+                <Form.Control
+                    type="textarea"
+                    id="inputPassword5"
+                    aria-describedby="passwordHelpBlock"
+                />
+                <Form.Text id="passwordHelpBlock" muted>
+                    Enter Your Story
+                </Form.Text>
+            </div>
+            <div style={{display: "flex", justifyContent: "space-between"}}>
+                <Button variant="danger">Clear Vote</Button>
+                <Button variant="primary">Show Vote</Button>
+            </div>
+            {/*point part*/}
+            <div>
+                {
+                    series.map((item, key) => {
+                        return (
+                            <Button variant="secondary" key={key}>{item}</Button>
+                        )
+                    })
+                }
+            </div>
+            <hr/>
+            <div>
+                <p>Score</p>
+                <div>
+                    <Table striped bordered hover>
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Score</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Otto</td>
+                            <td>1</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Thornton</td>
+                            <td>3</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Larry the Bird</td>
+                            <td>2</td>
+                        </tr>
+                        </tbody>
+                    </Table>
+                </div>
+            </div>
+
+        </Container>
+    )
+}
+
+export default PointerVoteCopy;

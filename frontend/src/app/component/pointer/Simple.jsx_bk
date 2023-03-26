@@ -1,0 +1,115 @@
+import {useEffect, useState} from 'react';
+import SockJS from 'sockjs-client';
+import Stomp from 'webstomp-client';
+import Config from "../../Config";
+export default function Simple() {
+    const wsConnectUrl = Config.WS_URL;
+    const destinationUrl = Config.POINTER_BASE_URL+'/topic/public';
+    const [stompClient, setStompClient] = useState(null);
+    const [messageHistory, setMessageHistory] = useState([]);
+    const [subscriptionRef, setSubscriptionRef] = useState(null);
+    const [userText, setUserText] = useState('');
+
+
+
+    useEffect(() => {
+        connect();
+
+    }, []);
+
+    function connect() {
+        const stompClient = Stomp.over(SockJS(wsConnectUrl))
+        stompClient.connect({},
+            () => {
+                setStompClient(stompClient);
+                onConnected();
+            }, onError)
+        //username = document.querySelector('#name').value.trim();
+
+        // if(username) {
+        //     usernamePage.classList.add('hidden');
+        //     chatPage.classList.remove('hidden');
+        //
+        //     var socket = new SockJS('http://localhost:8080/ws');
+        //     stompClient = Stomp.over(socket);
+        //
+        //     stompClient.connect({}, onConnected, onError);
+        // }
+        //event.preventDefault();
+    }
+
+    function onConnected() {
+        // Subscribe to the Public Topic
+        stompClient.subscribe('/topic/public', onMessageReceived);
+
+        // Tell your username to the server
+        stompClient.send("/app/addUser",
+            {},
+            JSON.stringify({sender: "username", type: 'JOIN'})
+        )
+
+        //connectingElement.classList.add('hidden');
+    }
+
+    function onMessageReceived(payload) {
+        console.log("payload"+payload)
+    }
+
+    function onError(error) {
+        //connectingElement.textContent = 'Could not connect to WebSocket server. Please refresh this page to try again!';
+        //connectingElement.style.color = 'red';
+        console.log(error);
+    }
+
+    // const onMessageReceived = (newState) => {
+    //     setMessageHistory(previousState => [...previousState, newState.body])
+    //     setUserText('')
+    // };
+
+    const onClickJoinChat = () => {
+        const subRef = stompClient.subscribe(destinationUrl, onMessageReceived)
+        setSubscriptionRef(subRef)
+    };
+
+    const onChangeUserText = ({target: {value}}) => (setUserText(value))
+    const onKeyDownUserText = ({keyCode}) => {
+        if (subscriptionRef !== null && keyCode === 13) { // Enter
+            sendMessage()
+        }
+    }
+    const sendMessage = () => {
+        stompClient.send(destinationUrl, userText)
+    }
+
+    return (
+        <div>
+            <main className="main">
+                <div className="contentWrapper">
+                    <div>
+                        Websocket Connection: <b>{stompClient == null ? 'No Ready' : 'Ready'}</b><br/>
+                        Client Connected: <b>{stompClient?.connected == null ? 'No' : 'Yes'}</b><br/>
+                    </div>
+                    <div>
+                        {subscriptionRef == null
+                            ? <button disabled={stompClient === null}
+                                      onClick={onClickJoinChat}>
+                                Join Chat
+                            </button>
+                            : ''
+                        }
+                    </div>
+                    <div>
+                        <pre>{JSON.stringify(messageHistory, null, '  ')}</pre>
+                        <div>
+                            <input placeholder="Enter your message"
+                                   type="text"
+                                   value={userText}
+                                   onChange={onChangeUserText}
+                                   onKeyDown={onKeyDownUserText}/>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    )
+}

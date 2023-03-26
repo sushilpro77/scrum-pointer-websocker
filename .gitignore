@@ -27,3 +27,6 @@ nbdist/
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+
+### frontend
+frontend/node_modules

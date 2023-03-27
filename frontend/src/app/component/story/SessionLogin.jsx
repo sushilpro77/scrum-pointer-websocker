@@ -67,7 +67,7 @@ const SessionLogin = () => {
     console.log(message);
     console.log("-----")
     if(message.type == "DESCRIPTION"){
-      setMessage(message.content)
+      setMessage(message.description)
     } else if(message.type == "JOIN"){
       setUsers(message.userPoint)
     }else if(message.type == "EXCEPTION"){
